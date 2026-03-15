@@ -4,7 +4,7 @@ Small shell-first commands for working with Anki resources through AnkiConnect.
 
 ![Terminal demo](assets/anki-demo.gif)
 
-_Demo recorded from `assets/terminalizer/anki-demo.yml` and rendered from that Terminalizer recording._
+_Regenerate with `./scripts/render-demo.sh`. For future demos, prefer VHS over Terminalizer if you want a cleaner dedicated workflow._
 
 ## Install
 

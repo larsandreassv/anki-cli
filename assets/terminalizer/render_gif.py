@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import html
 from pathlib import Path
 
 import imageio.v2 as imageio
@@ -81,7 +80,7 @@ def feed(text):
             put_char(ch)
 
 
-def draw_terminal(snapshot):
+def draw_terminal(snapshot, *, show_cursor):
     image = Image.new('RGB', (img_w, img_h), frame_bg)
     draw = ImageDraw.Draw(image)
     outer = (20, 20, img_w - 20, img_h - 20)
@@ -105,23 +104,35 @@ def draw_terminal(snapshot):
         else:
             draw.text((x0, y), line, fill=fg, font=font)
 
-    # Cursor on final non-empty line for a terminal feel.
-    cursor_line = snapshot[-1] if snapshot else ''
-    cursor_x = x0 + min(len(cursor_line), cols - 1) * char_width
-    cursor_y = y0 + (min(len(snapshot), rows) - 1) * line_height
-    draw.rectangle((cursor_x, cursor_y + line_height - 4, cursor_x + char_width, cursor_y + line_height - 2), fill=accent)
+    if show_cursor:
+        cursor_line = snapshot[-1] if snapshot else ''
+        cursor_x = x0 + min(len(cursor_line), cols - 1) * char_width
+        cursor_y = y0 + (min(len(snapshot), rows) - 1) * line_height
+        draw.rectangle((cursor_x, cursor_y + line_height - 4, cursor_x + char_width, cursor_y + line_height - 2), fill=accent)
     return image
 
-frames = []
+snapshots = []
 durations = []
 for record in records:
     feed(record['content'])
-    snapshot = lines[-rows:]
-    frames.append(draw_terminal(snapshot))
+    snapshots.append(lines[-rows:])
     durations.append(max(160, min(int(record['delay']), 1100)))
 
-if frames:
-    durations[-1] = 1400
+if not snapshots:
+    raise SystemExit('no frames recorded')
 
-imageio.mimsave(output, frames, duration=[d / 1000 for d in durations], loop=0)
+animation_start = 1 if len(snapshots) > 1 else 0
+cover_index = min(5, len(snapshots) - 1)
+
+frames = [draw_terminal(snapshots[cover_index], show_cursor=False)]
+frame_durations = [1.2]
+
+for i, snapshot in enumerate(snapshots[animation_start:], start=animation_start):
+    frames.append(draw_terminal(snapshot, show_cursor=(i == len(snapshots) - 1)))
+    frame_durations.append(durations[i] / 1000)
+
+if frame_durations:
+    frame_durations[-1] = 1.4
+
+imageio.mimsave(output, frames, duration=frame_durations, loop=0)
 print(output)
