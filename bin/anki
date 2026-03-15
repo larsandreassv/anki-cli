@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+LIB_ROOT=''
+
+for candidate in \
+    "${ANKI_DATA_DIR:-}/lib" \
+    "$SCRIPT_DIR/../lib" \
+    "${XDG_DATA_HOME:-$HOME/.local/share}/anki/lib"
+do
+    if [ -f "$candidate/anki/common.sh" ]; then
+        LIB_ROOT=$candidate
+        break
+    fi
+done
+
+[ -n "$LIB_ROOT" ] || {
+    printf 'error: unable to locate anki library files\n' >&2
+    exit 1
+}
+
+# shellcheck source=../lib/anki/common.sh
+. "$LIB_ROOT/anki/common.sh"
+
+usage() {
+    cat <<'EOF'
+Usage:
+  anki doctor [--fix-wsl]
+  anki version
+  anki connect <ping|url|call>
+  anki deck list
+  anki model list
+  anki model fields <model>
+  anki note <check|add> --deck <deck> --model <model> --field <name=value> [--field ...] [--allow-duplicate]
+
+Examples:
+  anki doctor
+  anki doctor --fix-wsl
+  anki connect ping
+  anki deck list
+  anki model fields RTK
+  anki note add --deck "Japanese::RTK" --model RTK \
+    --field Keyword=festival \
+    --field Kanji=祭
+  anki connect call findNotes '{"query":"deck:Japanese::RTK"}'
+EOF
+}
+
+cmd=${1:-help}
+[ "$#" -gt 0 ] && shift || true
+
+case "$cmd" in
+    --help|-h|help)
+        usage
+        ;;
+    doctor)
+        # shellcheck source=../lib/anki/cmd/doctor.sh
+        . "$LIB_ROOT/anki/cmd/doctor.sh"
+        anki_cmd_doctor "$@"
+        ;;
+    version)
+        # shellcheck source=../lib/anki/cmd/version.sh
+        . "$LIB_ROOT/anki/cmd/version.sh"
+        anki_cmd_version "$@"
+        ;;
+    connect)
+        # shellcheck source=../lib/anki/cmd/connect.sh
+        . "$LIB_ROOT/anki/cmd/connect.sh"
+        anki_cmd_connect "$@"
+        ;;
+    deck)
+        # shellcheck source=../lib/anki/cmd/deck.sh
+        . "$LIB_ROOT/anki/cmd/deck.sh"
+        anki_cmd_deck "$@"
+        ;;
+    model)
+        # shellcheck source=../lib/anki/cmd/model.sh
+        . "$LIB_ROOT/anki/cmd/model.sh"
+        anki_cmd_model "$@"
+        ;;
+    note)
+        # shellcheck source=../lib/anki/cmd/note.sh
+        . "$LIB_ROOT/anki/cmd/note.sh"
+        anki_cmd_note "$@"
+        ;;
+    *)
+        ankic_die "unknown command: $cmd"
+        ;;
+esac
