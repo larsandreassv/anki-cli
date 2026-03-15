@@ -165,6 +165,129 @@ print(json.dumps({sys.argv[1]: sys.argv[2]}, ensure_ascii=False))
 PY
 }
 
+ankic_make_model_name_params_json() {
+    ankic_make_named_params_json modelName "$1"
+}
+
+ankic_make_deck_name_params_json() {
+    ankic_make_named_params_json deck "$1"
+}
+
+ankic_make_named_list_params_json() {
+    ankic_python_json - "$@" <<'PY'
+import json
+import sys
+
+if len(sys.argv) < 3:
+    raise SystemExit("invalid named list payload")
+
+key = sys.argv[1]
+values = sys.argv[2:]
+print(json.dumps({key: values}, ensure_ascii=False))
+PY
+}
+
+ankic_make_model_field_params_json() {
+    ankic_python_json - "$1" "$2" <<'PY'
+import json
+import sys
+
+print(json.dumps({
+    "modelName": sys.argv[1],
+    "fieldName": sys.argv[2],
+}, ensure_ascii=False))
+PY
+}
+
+ankic_make_model_field_rename_params_json() {
+    ankic_python_json - "$1" "$2" "$3" <<'PY'
+import json
+import sys
+
+print(json.dumps({
+    "modelName": sys.argv[1],
+    "oldFieldName": sys.argv[2],
+    "newFieldName": sys.argv[3],
+}, ensure_ascii=False))
+PY
+}
+
+ankic_make_model_template_add_params_json() {
+    ankic_python_json - "$1" "$2" "$3" "$4" <<'PY'
+import json
+import sys
+
+print(json.dumps({
+    "modelName": sys.argv[1],
+    "template": {
+        "Name": sys.argv[2],
+        "Front": sys.argv[3],
+        "Back": sys.argv[4],
+    },
+}, ensure_ascii=False))
+PY
+}
+
+ankic_make_model_template_params_json() {
+    ankic_python_json - "$1" "$2" <<'PY'
+import json
+import sys
+
+print(json.dumps({
+    "modelName": sys.argv[1],
+    "templateName": sys.argv[2],
+}, ensure_ascii=False))
+PY
+}
+
+ankic_make_model_template_rename_params_json() {
+    ankic_python_json - "$1" "$2" "$3" <<'PY'
+import json
+import sys
+
+print(json.dumps({
+    "modelName": sys.argv[1],
+    "oldTemplateName": sys.argv[2],
+    "newTemplateName": sys.argv[3],
+}, ensure_ascii=False))
+PY
+}
+
+ankic_make_create_model_params_json() {
+    ankic_python_json - "$@" <<'PY'
+import json
+import sys
+
+if len(sys.argv) < 6:
+    raise SystemExit("invalid cardtype payload")
+
+model_name = sys.argv[1]
+template_name = sys.argv[2]
+front = sys.argv[3]
+back = sys.argv[4]
+css = sys.argv[5]
+fields = sys.argv[6:]
+
+if not fields:
+    raise SystemExit("at least one field is required")
+
+payload = {
+    "modelName": model_name,
+    "inOrderFields": fields,
+    "cardTemplates": [{
+        "Name": template_name,
+        "Front": front,
+        "Back": back,
+    }],
+}
+
+if css:
+    payload["css"] = css
+
+print(json.dumps(payload, ensure_ascii=False))
+PY
+}
+
 ankic_make_note_param_json() {
     ankic_python_json - "$1" <<'PY'
 import json
@@ -188,20 +311,24 @@ ankic_build_note_json() {
 import json
 import sys
 
-if len(sys.argv) < 5:
+if len(sys.argv) < 6:
     raise SystemExit("invalid note payload")
 
 deck = sys.argv[1]
 model = sys.argv[2]
 allow_duplicate = sys.argv[3].lower() == "true"
+field_parts = sys.argv[4:]
+
+if len(field_parts) % 2 != 0:
+    raise SystemExit("invalid field payload")
+
 fields = {}
 
-for field_spec in sys.argv[4:]:
-    if "=" not in field_spec:
-        raise SystemExit(f"invalid field, expected name=value: {field_spec}")
-    name, value = field_spec.split("=", 1)
+for index in range(0, len(field_parts), 2):
+    name = field_parts[index]
+    value = field_parts[index + 1]
     if not name:
-        raise SystemExit(f"field name cannot be empty: {field_spec}")
+        raise SystemExit("field name cannot be empty")
     fields[name] = value
 
 note = {
@@ -343,6 +470,42 @@ for item in value:
         print("true" if item else "false")
     else:
         print(item)
+PY
+}
+
+ankic_print_json_object_keys() {
+    ankic_python_json - "$1" <<'PY'
+import json
+import sys
+
+value = json.loads(sys.argv[1])
+if not isinstance(value, dict):
+    raise SystemExit("expected a JSON object result")
+
+for key in value:
+    print(key)
+PY
+}
+
+ankic_print_json_object_entries() {
+    ankic_python_json - "$1" <<'PY'
+import json
+import sys
+
+value = json.loads(sys.argv[1])
+if not isinstance(value, dict):
+    raise SystemExit("expected a JSON object result")
+
+for key, item in value.items():
+    if isinstance(item, (dict, list)):
+        rendered = json.dumps(item, ensure_ascii=False)
+    elif item is None:
+        rendered = "null"
+    elif isinstance(item, bool):
+        rendered = "true" if item else "false"
+    else:
+        rendered = str(item)
+    print(f"{key}\t{rendered}")
 PY
 }
 

@@ -30,19 +30,32 @@ Usage:
   anki version
   anki connect <ping|url|call>
   anki deck list
+  anki deck ids
+  anki deck add <deck>
+  anki deck stats <deck> [<deck> ...]
   anki cardtype list
-  anki cardtype fields <cardtype>
-  anki card <check|add> --deck <deck> --cardtype <cardtype> --field <name=value> [--field ...] [--allow-duplicate]
+  anki cardtype add --cardtype <cardtype> --field <field> [--field ...] --front <front> --back <back> [--template-name <name>] [--css <css>]
+  anki cardtype fields list [--cardtype <cardtype>]
+  anki cardtype fields add --cardtype <cardtype> <field>
+  anki cardtype fields remove --cardtype <cardtype> <field>
+  anki cardtype fields rename --cardtype <cardtype> <old> <new>
+  anki cardtype templates list [--cardtype <cardtype>]
+  anki cardtype templates add --cardtype <cardtype> --template <name> --front <front> --back <back>
+  anki cardtype templates remove --cardtype <cardtype> <template>
+  anki cardtype templates rename --cardtype <cardtype> <old> <new>
+  anki card <check|add> --deck <deck> --cardtype <cardtype> --field <name> <value> [--field ...] [--allow-duplicate]
 
 Examples:
   anki doctor
   anki doctor --fix-wsl
   anki connect ping
   anki deck list
-  anki cardtype fields RTK
+  anki deck add "Japanese::MyNewDeck"
+  anki cardtype fields list --cardtype RTK
+  anki cardtype fields list
   anki card add --deck "Japanese::RTK" --cardtype RTK \
-    --field Keyword=festival \
-    --field Kanji=祭
+    --field Keyword festival \
+    --field Kanji 祭
   anki connect call findNotes '{"query":"deck:Japanese::RTK"}'
 EOF
 }

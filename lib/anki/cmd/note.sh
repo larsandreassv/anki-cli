@@ -22,8 +22,8 @@ anki_cmd_card() {
         --help|-h|help)
             cat <<'EOF'
 Usage:
-  anki card check --deck <deck> --cardtype <cardtype> --field <name=value> [--field ...] [--allow-duplicate]
-  anki card add --deck <deck> --cardtype <cardtype> --field <name=value> [--field ...] [--allow-duplicate]
+  anki card check --deck <deck> --cardtype <cardtype> --field <name> <value> [--field ...] [--allow-duplicate]
+  anki card add --deck <deck> --cardtype <cardtype> --field <name> <value> [--field ...] [--allow-duplicate]
 EOF
             ;;
         *)
@@ -51,9 +51,9 @@ anki_card_parse_args() {
                 shift 2
                 ;;
             --field)
-                [ "$#" -ge 2 ] || ankic_die "missing value for --field"
-                fields+=("$2")
-                shift 2
+                [ "$#" -ge 3 ] || ankic_die "missing name/value for --field"
+                fields+=("$2" "$3")
+                shift 3
                 ;;
             --allow-duplicate)
                 allow_duplicate='true'
@@ -67,7 +67,7 @@ anki_card_parse_args() {
 
     [ -n "$deck" ] || ankic_die "--deck is required"
     [ -n "$cardtype" ] || ankic_die "--cardtype is required"
-    [ "${#fields[@]}" -gt 0 ] || ankic_die "at least one --field name=value is required"
+    [ "${#fields[@]}" -gt 0 ] || ankic_die "at least one --field <name> <value> is required"
 
     ANKI_NOTE_JSON=$(ankic_build_note_json "$deck" "$cardtype" "$allow_duplicate" "${fields[@]}")
 }
