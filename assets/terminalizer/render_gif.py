@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-import imageio.v2 as imageio
 import yaml
 from PIL import Image, ImageDraw, ImageFont
 
@@ -32,6 +31,11 @@ header_fg = '#d1d5db'
 prompt_fg = config['theme']['green']
 cmd_fg = '#ffffff'
 accent = config['theme']['blue']
+
+TYPING_FRAME = 0.35
+COMMAND_SETTLE = 0.45
+READ_PAUSE = 1.8
+CLEAR_PAUSE = 0.45
 
 lines = ['']
 cursor_row = 0
@@ -80,6 +84,20 @@ def feed(text):
             put_char(ch)
 
 
+def clear_screen():
+    global lines, cursor_row, cursor_col
+    lines = ['']
+    cursor_row = 0
+    cursor_col = 0
+
+
+def typing_stages(text):
+    if len(text) <= 1:
+        return [text]
+    midpoint = max(1, len(text) // 2)
+    return [text[:midpoint], text]
+
+
 def draw_terminal(snapshot, *, show_cursor):
     image = Image.new('RGB', (img_w, img_h), frame_bg)
     draw = ImageDraw.Draw(image)
@@ -111,28 +129,77 @@ def draw_terminal(snapshot, *, show_cursor):
         draw.rectangle((cursor_x, cursor_y + line_height - 4, cursor_x + char_width, cursor_y + line_height - 2), fill=accent)
     return image
 
-snapshots = []
-durations = []
+steps = []
+pending_command = None
+
 for record in records:
-    feed(record['content'])
-    snapshots.append(lines[-rows:])
-    durations.append(max(160, min(int(record['delay']), 1100)))
+    content = record['content'].replace('\r\n', '\n').replace('\r', '')
+    if content.startswith('\n$ '):
+        if pending_command is not None:
+            steps.append((pending_command, ''))
+        pending_command = content.lstrip('\n').rstrip('\n')
+    else:
+        output_text = content.rstrip('\n')
+        if pending_command is None:
+            continue
+        steps.append((pending_command, output_text))
+        pending_command = None
 
-if not snapshots:
-    raise SystemExit('no frames recorded')
+if pending_command is not None:
+    steps.append((pending_command, ''))
 
-animation_start = 1 if len(snapshots) > 1 else 0
-cover_index = min(5, len(snapshots) - 1)
+if not steps:
+    raise SystemExit('no command steps recorded')
 
-frames = [draw_terminal(snapshots[cover_index], show_cursor=False)]
-frame_durations = [1.2]
+frames = []
+frame_durations = []
 
-for i, snapshot in enumerate(snapshots[animation_start:], start=animation_start):
-    frames.append(draw_terminal(snapshot, show_cursor=(i == len(snapshots) - 1)))
-    frame_durations.append(durations[i] / 1000)
+
+def append_frame(duration, *, show_cursor):
+    frames.append(draw_terminal(lines[-rows:], show_cursor=show_cursor))
+    frame_durations.append(duration)
+
+
+cover_command, cover_output = steps[0]
+clear_screen()
+feed(cover_command + '\n')
+if cover_output:
+    feed(cover_output + '\n')
+append_frame(1.4, show_cursor=False)
+
+for step_index, (command, output_text) in enumerate(steps):
+    clear_screen()
+    feed('$ ')
+    append_frame(CLEAR_PAUSE, show_cursor=True)
+
+    typed_prefix = ''
+    for snapshot in typing_stages(command[2:]):
+        feed(snapshot[len(typed_prefix):])
+        typed_prefix = snapshot
+        append_frame(TYPING_FRAME, show_cursor=True)
+
+    append_frame(COMMAND_SETTLE, show_cursor=True)
+    feed('\n')
+    append_frame(0.3, show_cursor=False)
+
+    output_lines = [line for line in output_text.split('\n') if line]
+    if output_lines:
+        feed('\n'.join(output_lines) + '\n')
+    append_frame(READ_PAUSE, show_cursor=False)
+    if step_index != len(steps) - 1:
+        clear_screen()
+        append_frame(CLEAR_PAUSE, show_cursor=False)
 
 if frame_durations:
-    frame_durations[-1] = 1.4
+    frame_durations[-1] = 1.9
 
-imageio.mimsave(output, frames, duration=frame_durations, loop=0)
+durations_ms = [max(1, int(duration * 1000)) for duration in frame_durations]
+frames[0].save(
+    output,
+    save_all=True,
+    append_images=frames[1:],
+    duration=durations_ms,
+    loop=0,
+    optimize=False,
+)
 print(output)
