@@ -30,17 +30,17 @@ Usage:
   anki version
   anki connect <ping|url|call>
   anki deck list
-  anki model list
-  anki model fields <model>
-  anki note <check|add> --deck <deck> --model <model> --field <name=value> [--field ...] [--allow-duplicate]
+  anki cardtype list
+  anki cardtype fields <cardtype>
+  anki card <check|add> --deck <deck> --cardtype <cardtype> --field <name=value> [--field ...] [--allow-duplicate]
 
 Examples:
   anki doctor
   anki doctor --fix-wsl
   anki connect ping
   anki deck list
-  anki model fields RTK
-  anki note add --deck "Japanese::RTK" --model RTK \
+  anki cardtype fields RTK
+  anki card add --deck "Japanese::RTK" --cardtype RTK \
     --field Keyword=festival \
     --field Kanji=祭
   anki connect call findNotes '{"query":"deck:Japanese::RTK"}'
@@ -74,15 +74,15 @@ case "$cmd" in
         . "$LIB_ROOT/anki/cmd/deck.sh"
         anki_cmd_deck "$@"
         ;;
-    model)
+    cardtype)
         # shellcheck source=../lib/anki/cmd/model.sh
         . "$LIB_ROOT/anki/cmd/model.sh"
-        anki_cmd_model "$@"
+        anki_cmd_cardtype "$@"
         ;;
-    note)
+    card)
         # shellcheck source=../lib/anki/cmd/note.sh
         . "$LIB_ROOT/anki/cmd/note.sh"
-        anki_cmd_note "$@"
+        anki_cmd_card "$@"
         ;;
     *)
         ankic_die "unknown command: $cmd"

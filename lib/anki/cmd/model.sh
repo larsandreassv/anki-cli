@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
-anki_cmd_model() {
+anki_cmd_cardtype() {
     local subcmd=${1:-}
-    [ -n "$subcmd" ] || ankic_die "usage: anki model <list|fields>"
+    [ -n "$subcmd" ] || ankic_die "usage: anki cardtype <list|fields>"
     shift || true
 
     case "$subcmd" in
         list)
-            [ "$#" -eq 0 ] || ankic_die "usage: anki model list"
+            [ "$#" -eq 0 ] || ankic_die "usage: anki cardtype list"
             local model_names
             model_names=$(ankic_invoke modelNames '{}') || return 1
             ankic_print_json_lines "$model_names"
             ;;
         fields)
-            [ "$#" -eq 1 ] || ankic_die "usage: anki model fields <model>"
+            [ "$#" -eq 1 ] || ankic_die "usage: anki cardtype fields <cardtype>"
             local model_fields
             model_fields=$(ankic_invoke modelFieldNames "$(ankic_make_named_params_json modelName "$1")") || return 1
             ankic_print_json_lines "$model_fields"
@@ -21,12 +21,12 @@ anki_cmd_model() {
         --help|-h|help)
             cat <<'EOF'
 Usage:
-  anki model list
-  anki model fields <model>
+  anki cardtype list
+  anki cardtype fields <cardtype>
 EOF
             ;;
         *)
-            ankic_die "unknown model command: $subcmd"
+            ankic_die "unknown cardtype command: $subcmd"
             ;;
     esac
 }

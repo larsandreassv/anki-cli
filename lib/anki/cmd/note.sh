@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
-anki_cmd_note() {
+anki_cmd_card() {
     local subcmd=${1:-}
-    [ -n "$subcmd" ] || ankic_die "usage: anki note <check|add> ..."
+    [ -n "$subcmd" ] || ankic_die "usage: anki card <check|add> ..."
     shift || true
 
     case "$subcmd" in
         check)
-            anki_note_parse_args "$@"
-            anki_note_can_add
+            anki_card_parse_args "$@"
+            anki_card_can_add
             ;;
         add)
-            anki_note_parse_args "$@"
-            if [ "$(anki_note_can_add)" != "true" ]; then
-                ankic_die "note cannot be added; it may be a duplicate or invalid for the selected deck/model"
+            anki_card_parse_args "$@"
+            if [ "$(anki_card_can_add)" != "true" ]; then
+                ankic_die "card cannot be added; it may be a duplicate or invalid for the selected deck/cardtype"
             fi
             local add_note_result
             add_note_result=$(ankic_invoke addNote "$(ankic_make_note_param_json "$ANKI_NOTE_JSON")") || return 1
@@ -22,19 +22,19 @@ anki_cmd_note() {
         --help|-h|help)
             cat <<'EOF'
 Usage:
-  anki note check --deck <deck> --model <model> --field <name=value> [--field ...] [--allow-duplicate]
-  anki note add --deck <deck> --model <model> --field <name=value> [--field ...] [--allow-duplicate]
+  anki card check --deck <deck> --cardtype <cardtype> --field <name=value> [--field ...] [--allow-duplicate]
+  anki card add --deck <deck> --cardtype <cardtype> --field <name=value> [--field ...] [--allow-duplicate]
 EOF
             ;;
         *)
-            ankic_die "unknown note command: $subcmd"
+            ankic_die "unknown card command: $subcmd"
             ;;
     esac
 }
 
-anki_note_parse_args() {
+anki_card_parse_args() {
     local deck=''
-    local model=''
+    local cardtype=''
     local allow_duplicate='false'
     local fields=()
 
@@ -45,9 +45,9 @@ anki_note_parse_args() {
                 deck=$2
                 shift 2
                 ;;
-            --model)
-                [ "$#" -ge 2 ] || ankic_die "missing value for --model"
-                model=$2
+            --cardtype)
+                [ "$#" -ge 2 ] || ankic_die "missing value for --cardtype"
+                cardtype=$2
                 shift 2
                 ;;
             --field)
@@ -60,19 +60,19 @@ anki_note_parse_args() {
                 shift
                 ;;
             *)
-                ankic_die "unknown option for note command: $1"
+                ankic_die "unknown option for card command: $1"
                 ;;
         esac
     done
 
     [ -n "$deck" ] || ankic_die "--deck is required"
-    [ -n "$model" ] || ankic_die "--model is required"
+    [ -n "$cardtype" ] || ankic_die "--cardtype is required"
     [ "${#fields[@]}" -gt 0 ] || ankic_die "at least one --field name=value is required"
 
-    ANKI_NOTE_JSON=$(ankic_build_note_json "$deck" "$model" "$allow_duplicate" "${fields[@]}")
+    ANKI_NOTE_JSON=$(ankic_build_note_json "$deck" "$cardtype" "$allow_duplicate" "${fields[@]}")
 }
 
-anki_note_can_add() {
+anki_card_can_add() {
     local can_add_result
     can_add_result=$(ankic_invoke canAddNotes "$(ankic_wrap_single_note_params "$ANKI_NOTE_JSON")") || return 1
     ankic_print_first_json_value "$can_add_result"

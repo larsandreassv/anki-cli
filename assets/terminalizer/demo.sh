@@ -9,6 +9,6 @@ run_cmd() {
 }
 run_cmd ./bin/anki connect ping
 run_cmd ./bin/anki deck list
-run_cmd ./bin/anki model fields RTK
-run_cmd ./bin/anki note add --deck Japanese::RTK --model RTK --field Keyword=festival --field Kanji=祭
+run_cmd ./bin/anki cardtype fields RTK
+run_cmd ./bin/anki card add --deck Japanese::RTK --cardtype RTK --field Keyword=festival --field Kanji=祭
 run_cmd ./bin/anki connect call findNotes '{"query":"deck:Japanese::RTK"}'

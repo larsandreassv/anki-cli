@@ -53,11 +53,11 @@ records:
   - delay: 55
     content: "Japanese::RTK\r\nJapanese::WordWrite\r\n"
   - delay: 804
-    content: "\r\n$ ./bin/anki model fields RTK\r\n"
+    content: "\r\n$ ./bin/anki cardtype fields RTK\r\n"
   - delay: 83
     content: "Keyword\r\nKanji\r\n"
   - delay: 804
-    content: "\r\n$ ./bin/anki note add --deck Japanese::RTK --model RTK --field Keyword=festival --field Kanji=祭\r\n"
+    content: "\r\n$ ./bin/anki card add --deck Japanese::RTK --cardtype RTK --field Keyword=festival --field Kanji=祭\r\n"
   - delay: 172
     content: "123456789\r\n"
   - delay: 804

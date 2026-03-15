@@ -29,10 +29,10 @@ anki connect ping
 anki connect url
 anki connect call findNotes '{"query":"deck:Japanese::RTK"}'
 anki deck list
-anki model list
-anki model fields RTK
-anki note check --deck "Japanese::RTK" --model RTK --field Keyword=festival --field Kanji=祭
-anki note add --deck "Japanese::RTK" --model RTK --field Keyword=festival --field Kanji=祭
+anki cardtype list
+anki cardtype fields RTK
+anki card check --deck "Japanese::RTK" --cardtype RTK --field Keyword=festival --field Kanji=祭
+anki card add --deck "Japanese::RTK" --cardtype RTK --field Keyword=festival --field Kanji=祭
 ```
 
 ## Environment
