@@ -8,7 +8,9 @@ anki_cmd_deck() {
     case "$subcmd" in
         list)
             [ "$#" -eq 0 ] || ankic_die "usage: anki deck list"
-            ankic_print_json_lines "$(ankic_invoke deckNames '{}')"
+            local deck_names
+            deck_names=$(ankic_invoke deckNames '{}') || return 1
+            ankic_print_json_lines "$deck_names"
             ;;
         --help|-h|help)
             cat <<'EOF'

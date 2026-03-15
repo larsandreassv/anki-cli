@@ -48,7 +48,11 @@ If Anki runs on Windows and `anki` runs inside WSL:
 ```sh
 anki doctor
 anki doctor --fix-wsl
-export ANKI_CONNECT_URL=http://<windows-host-ip>:8765
+anki deck list
 ```
 
 `anki doctor --fix-wsl` updates AnkiConnect's Windows `config.json`, creates a `.bak` backup, and sets `webBindAddress` to `0.0.0.0`.
+
+When `ANKI_CONNECT_URL` is not set, commands running inside WSL will try the default `http://127.0.0.1:8765` first and then automatically retry the suggested Windows host URL.
+
+You can still set `ANKI_CONNECT_URL` explicitly if you want to force a specific endpoint.

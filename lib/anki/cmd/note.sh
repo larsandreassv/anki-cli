@@ -15,7 +15,9 @@ anki_cmd_note() {
             if [ "$(anki_note_can_add)" != "true" ]; then
                 ankic_die "note cannot be added; it may be a duplicate or invalid for the selected deck/model"
             fi
-            ankic_print_scalar "$(ankic_invoke addNote "$(ankic_make_note_param_json "$ANKI_NOTE_JSON")")"
+            local add_note_result
+            add_note_result=$(ankic_invoke addNote "$(ankic_make_note_param_json "$ANKI_NOTE_JSON")") || return 1
+            ankic_print_scalar "$add_note_result"
             ;;
         --help|-h|help)
             cat <<'EOF'
@@ -71,5 +73,7 @@ anki_note_parse_args() {
 }
 
 anki_note_can_add() {
-    ankic_print_first_json_value "$(ankic_invoke canAddNotes "$(ankic_wrap_single_note_params "$ANKI_NOTE_JSON")")"
+    local can_add_result
+    can_add_result=$(ankic_invoke canAddNotes "$(ankic_wrap_single_note_params "$ANKI_NOTE_JSON")") || return 1
+    ankic_print_first_json_value "$can_add_result"
 }

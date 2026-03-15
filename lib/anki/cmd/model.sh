@@ -8,11 +8,15 @@ anki_cmd_model() {
     case "$subcmd" in
         list)
             [ "$#" -eq 0 ] || ankic_die "usage: anki model list"
-            ankic_print_json_lines "$(ankic_invoke modelNames '{}')"
+            local model_names
+            model_names=$(ankic_invoke modelNames '{}') || return 1
+            ankic_print_json_lines "$model_names"
             ;;
         fields)
             [ "$#" -eq 1 ] || ankic_die "usage: anki model fields <model>"
-            ankic_print_json_lines "$(ankic_invoke modelFieldNames "$(ankic_make_named_params_json modelName "$1")")"
+            local model_fields
+            model_fields=$(ankic_invoke modelFieldNames "$(ankic_make_named_params_json modelName "$1")") || return 1
+            ankic_print_json_lines "$model_fields"
             ;;
         --help|-h|help)
             cat <<'EOF'

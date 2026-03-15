@@ -13,6 +13,12 @@ ankic_url() {
     printf '%s\n' "${ANKI_CONNECT_URL:-http://127.0.0.1:8765}"
 }
 
+ankic_should_try_wsl_fallback() {
+    [ -z "${ANKI_CONNECT_URL:-}" ] || return 1
+    ankic_is_wsl || return 1
+    [ "$(ankic_url)" = 'http://127.0.0.1:8765' ]
+}
+
 ankic_is_wsl() {
     [ -r /proc/version ] && grep -qiE 'microsoft|wsl' /proc/version
 }
@@ -226,6 +232,18 @@ print(json.dumps(payload, ensure_ascii=False))
 PY
 }
 
+ankic_post_payload() {
+    local url=$1
+    local payload=$2
+
+    curl --silent --show-error \
+        --connect-timeout 2 \
+        --max-time 10 \
+        -H 'Content-Type: application/json' \
+        --data-binary "$payload" \
+        "$url"
+}
+
 ankic_extract_result() {
     ankic_python_json - "$1" <<'PY'
 import json
@@ -255,26 +273,44 @@ ankic_invoke() {
 
     local action=$1
     local params_json=${2:-'{}'}
+    local url
+    local fallback_url=''
     local payload
     local response
+    local using_wsl_fallback='false'
 
-    payload=$(ankic_request_payload "$action" "$params_json") || ankic_die "failed to build request payload for action: $action"
-
-    if ! response=$(curl --silent --show-error \
-        --connect-timeout 2 \
-        --max-time 10 \
-        -H 'Content-Type: application/json' \
-        --data-binary "$payload" \
-        "$(ankic_url)"); then
-        ankic_connection_help
-        exit 1
+    if ! payload=$(ankic_request_payload "$action" "$params_json"); then
+        printf 'error: failed to build request payload for action: %s\n' "$action" >&2
+        return 1
     fi
 
-    [ -n "$response" ] || ankic_die "AnkiConnect returned an empty response"
+    url=$(ankic_url)
+    if ankic_should_try_wsl_fallback; then
+        fallback_url=$(ankic_wsl_suggested_url || true)
+    fi
+
+    if ! response=$(ankic_post_payload "$url" "$payload" 2>/dev/null); then
+        if [ -n "$fallback_url" ] && [ "$fallback_url" != "$url" ] && response=$(ankic_post_payload "$fallback_url" "$payload"); then
+            using_wsl_fallback='true'
+        else
+            ankic_connection_help
+            return 1
+        fi
+    fi
+
+    if [ -z "$response" ]; then
+        printf 'error: AnkiConnect returned an empty response\n' >&2
+        return 1
+    fi
 
     local result
     if ! result=$(ankic_extract_result "$response" 2>&1); then
-        ankic_die "$result"
+        printf 'error: %s\n' "$result" >&2
+        return 1
+    fi
+
+    if [ "$using_wsl_fallback" = 'true' ]; then
+        printf 'WSL fallback: using %s\n' "$fallback_url" >&2
     fi
 
     printf '%s\n' "$result"

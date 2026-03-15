@@ -9,7 +9,7 @@ anki_cmd_connect() {
         ping)
             [ "$#" -eq 0 ] || ankic_die "usage: anki connect ping"
             local version_result
-            version_result=$(ankic_invoke version '{}')
+            version_result=$(ankic_invoke version '{}') || return 1
             printf 'reachable, version %s\n' "$(ankic_print_scalar "$version_result")"
             ;;
         url)
