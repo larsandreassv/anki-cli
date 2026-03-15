@@ -122,6 +122,10 @@ anki card add \
   --field Example "夏祭りに行きました。"
 ```
 
+Result:
+
+![Example result](assets/example-result.png)
+
 Useful follow-up checks:
 
 ```sh
