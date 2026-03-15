@@ -277,7 +277,6 @@ ankic_invoke() {
     local fallback_url=''
     local payload
     local response
-    local using_wsl_fallback='false'
 
     if ! payload=$(ankic_request_payload "$action" "$params_json"); then
         printf 'error: failed to build request payload for action: %s\n' "$action" >&2
@@ -291,7 +290,7 @@ ankic_invoke() {
 
     if ! response=$(ankic_post_payload "$url" "$payload" 2>/dev/null); then
         if [ -n "$fallback_url" ] && [ "$fallback_url" != "$url" ] && response=$(ankic_post_payload "$fallback_url" "$payload"); then
-            using_wsl_fallback='true'
+            :
         else
             ankic_connection_help
             return 1
@@ -307,10 +306,6 @@ ankic_invoke() {
     if ! result=$(ankic_extract_result "$response" 2>&1); then
         printf 'error: %s\n' "$result" >&2
         return 1
-    fi
-
-    if [ "$using_wsl_fallback" = 'true' ]; then
-        printf 'WSL fallback: using %s\n' "$fallback_url" >&2
     fi
 
     printf '%s\n' "$result"
